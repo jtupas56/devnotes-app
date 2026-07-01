@@ -8,7 +8,10 @@ jobs:
       - checkout
       - run:
           name: Install pnpm
-          command: npm install -g pnpm
+          command: |
+            curl -fsSL https://get.pnpm.io/install.sh | sh -
+            echo 'export PNPM_HOME="$HOME/.local/share/pnpm"' >> $BASH_ENV
+            echo 'export PATH="$PNPM_HOME:$PATH"' >> $BASH_ENV
       - run:
           name: Install dependencies
           command: pnpm install
