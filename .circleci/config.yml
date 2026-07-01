@@ -1,17 +1,17 @@
 version: 2.1
 
-orbs:
-  node: circleci/node@5.1.0
-  pnpm: circleci/pnpm@2.0.0
-
 jobs:
   build-and-check:
     docker:
       - image: cimg/node:18.20.5
     steps:
       - checkout
-      - pnpm/install:
-          pnpm-version: 9.4.0
+      - run:
+          name: Install pnpm
+          command: npm install -g pnpm
+      - run:
+          name: Install dependencies
+          command: pnpm install
       - run:
           name: Lint
           command: pnpm lint
