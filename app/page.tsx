@@ -6,122 +6,92 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { Trash2 } from "lucide-react";
+import { Trash2, Download } from "lucide-react";
 
-type Note = {
-  id: number;
-  title: string;
-  content: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
+type Note = { id: number; title: string; content: string; createdAt: Date; updatedAt: Date };
 
 export default function Home() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
+  const [content, setContent] = useState("");
+  const titleRef = useRef<HTMLInputElement>(null);
+  const selected = notes.find(n => n.id === selectedId);
 
-  const titleInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    getNotes().then(setNotes);
-  }, []);
+  useEffect(() => { getNotes().then(setNotes); }, []);
 
   useEffect(() => {
     if (!selectedId) return;
-    const timeout = setTimeout(() => {
+    const timer = setTimeout(() => {
       const note = notes.find(n => n.id === selectedId);
-      if (note && content !== note.content) {
-        updateNote(selectedId, content);
-        setIsSaving(false);
-      }
+      if (note && content !== note.content) updateNote(selectedId, content);
     }, 1000);
-    return () => clearTimeout(timeout);
+    return () => clearTimeout(timer);
   }, [content, selectedId, notes]);
 
   useEffect(() => {
-    if (selectedId && titleInputRef.current) {
-      titleInputRef.current.focus();
-      titleInputRef.current.select();
+    if (selectedId && titleRef.current) {
+      titleRef.current.focus();
+      titleRef.current.select();
     }
   }, [selectedId]);
 
   const selectNote = (id: number) => {
-    const note = notes.find(n => n.id === id);
-    if (note) {
-      setSelectedId(id);
-      setContent(note.content);
-      setTitle(note.title);
-    }
+    const n = notes.find(n => n.id === id);
+    if (n) { setSelectedId(id); setTitle(n.title); setContent(n.content); }
   };
 
-  const handleCreate = async () => {
-    const newNote = await createNote("");
-    setNotes([newNote, ...notes]);
-    selectNote(newNote.id);
+  const create = async () => {
+    const n = await createNote("");
+    setNotes([n, ...notes]);
+    selectNote(n.id);
   };
 
-  const handleDelete = async (id: number) => {
+  const del = async (id: number) => {
     await deleteNote(id);
     setNotes(notes.filter(n => n.id !== id));
-    if (selectedId === id) {
-      setSelectedId(null);
-      setContent("");
-      setTitle("");
-    }
+    if (selectedId === id) { setSelectedId(null); setTitle(""); setContent(""); }
   };
 
-  const handleTitleBlur = async () => {
-    if (selectedId && title !== notes.find(n => n.id === selectedId)?.title) {
+  const saveTitle = async () => {
+    if (selectedId && title !== notes.find(n => n.id === selectedId)?.title)
       await updateNoteTitle(selectedId, title);
-    }
   };
 
-  const selectedNote = notes.find(n => n.id === selectedId);
+  const downloadNote = () => {
+    if (!selected) return;
+    const blob = new Blob([selected.content || "Empty note"], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = (selected.title || "untitled") + ".txt";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background p-4">
-      {/* 👇 Centered container with max width */}
       <div className="w-full max-w-6xl h-[90vh] rounded-lg border shadow-lg overflow-hidden flex flex-col">
-        {/* Optional: Header */}
+        {/* Header */}
         <div className="border-b px-6 py-3 bg-muted/30">
           <h1 className="text-xl font-semibold">📝 DevNotes</h1>
         </div>
 
-        {/* Main Content: Sidebar + Editor */}
+        {/* Main Content */}
         <div className="flex flex-1 overflow-hidden">
           {/* Sidebar */}
           <div className="w-64 border-r p-4 flex flex-col bg-muted/10">
-            <Button onClick={handleCreate} className="w-full mb-4">
-              + New Note
-            </Button>
+            <Button onClick={create} className="w-full mb-4">+ New Note</Button>
             <ScrollArea className="flex-1">
-              {notes.map(note => (
-                <div
-                  key={note.id}
-                  className={`flex items-center justify-between p-2 rounded cursor-pointer ${selectedId === note.id ? "bg-accent" : "hover:bg-accent/50"
-                    }`}
-                >
-                  <div
-                    onClick={() => selectNote(note.id)}
-                    className="flex-1 min-w-0"
-                  >
-                    <p className="font-medium truncate">{note.title || "Untitled"}</p>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {note.content || "Empty"}
-                    </p>
+              {notes.map(n => (
+                <div key={n.id} className={`flex items-center justify-between p-2 rounded cursor-pointer ${selectedId === n.id ? "bg-accent" : "hover:bg-accent/50"}`}>
+                  <div onClick={() => selectNote(n.id)} className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{n.title || "Untitled"}</p>
+                    <p className="text-sm text-muted-foreground truncate">{n.content || "Empty"}</p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(note.id);
-                    }}
-                  >
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={e => { e.stopPropagation(); del(n.id); }}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -131,39 +101,25 @@ export default function Home() {
 
           {/* Editor */}
           <div className="flex-1 p-4 flex flex-col bg-background">
-            {selectedNote ? (
+            {selected ? (
               <>
-                <div className="flex justify-between items-center mb-2">
-                  <Input
-                    ref={titleInputRef}
-                    value={title}
-                    onChange={e => setTitle(e.target.value)}
-                    onBlur={handleTitleBlur}
-                    className="text-2xl font-bold border-none shadow-none px-0"
-                    placeholder="Note title"
-                  />
+                <div className="flex items-center gap-2 mb-2">
+                  <Input ref={titleRef} value={title} onChange={e => setTitle(e.target.value)} onBlur={saveTitle} className="text-2xl font-bold border-none shadow-none px-0 flex-1" placeholder="Note title" />
+                  <Button onClick={downloadNote} variant="outline" size="sm" className="flex items-center gap-1">
+                    <Download className="h-4 w-4" /> .txt
+                  </Button>
                 </div>
-                <Textarea
-                  value={content}
-                  onChange={e => setContent(e.target.value)}
-                  className="flex-1 resize-none"
-                  placeholder="Write your note here..."
-                />
-                <p className="text-xs text-muted-foreground mt-2">
-                  {isSaving ? "Saving..." : "All changes saved"}
-                </p>
+                <Textarea value={content} onChange={e => setContent(e.target.value)} className="flex-1 resize-none" placeholder="Write your note here..." />
               </>
             ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                Select a note or create a new one
-              </div>
+              <div className="flex items-center justify-center h-full text-muted-foreground">Select or create a note</div>
             )}
           </div>
         </div>
 
-        {/* Optional: Footer */}
+        {/* Footer */}
         <div className="border-t px-6 py-2 text-xs text-muted-foreground bg-muted/30 text-center">
-          Built with Next.j and  Neon
+          Built with Next.js and Neon
         </div>
       </div>
     </div>
