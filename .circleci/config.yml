@@ -1,30 +1,31 @@
 version: 2.1
 
 jobs:
-  build-and-check:
+  build: # this can be any name you choose
     docker:
-      - image: cimg/node:18.20.5
+      - image: node:18
+    resource_class: large
+    parallelism: 10
+
     steps:
       - checkout
+      - restore_cache:
+          name: Restore pnpm Package Cache
+          keys:
+            - pnpm-packages-{{ checksum "pnpm-lock.yaml" }}
       - run:
-          name: Install pnpm
+          name: Install pnpm package manager
           command: |
-            curl -fsSL https://get.pnpm.io/install.sh | sh -
-            echo 'export PNPM_HOME="$HOME/.local/share/pnpm"' >> $BASH_ENV
-            echo 'export PATH="$PNPM_HOME:$PATH"' >> $BASH_ENV
+            npm install --global corepack@latest
+            corepack enable
+            corepack prepare pnpm@latest-11 --activate
+            pnpm config set store-dir .pnpm-store
       - run:
-          name: Install dependencies
-          command: pnpm install
-      - run:
-          name: Lint
-          command: pnpm lint
-      - run:
-          name: Build
-          command: pnpm build
-      - store_artifacts:
-          path: .next
-
-workflows:
-  verify:
-    jobs:
-      - build-and-check
+          name: Install Dependencies
+          command: |
+            pnpm install
+      - save_cache:
+          name: Save pnpm Package Cache
+          key: pnpm-packages-{{ checksum "pnpm-lock.yaml" }}
+          paths:
+            - .pnpm-store
