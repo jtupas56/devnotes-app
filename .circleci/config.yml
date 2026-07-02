@@ -1,33 +1,18 @@
 version: 2.1
 
 jobs:
-  publish:
+  build:
     docker:
-      - image: cimg/node:22.14
+      - image: cimg/node:22.0.0
+
     steps:
       - checkout
-      - run:
-          name: Install dependencies
-          command: npm ci
-      - run:
-          name: Run tests
-          command: npm test
-      - run:
-          name: Build
-          command: npm run build --if-present
-      - run:
-          name: Publish to npm
-          command: |
-            export NPM_ID_TOKEN=$(circleci run oidc get --claims '{"aud": "npm:registry.npmjs.org"}')
-            npm publish --access public
 
-workflows:
-  publish:
-    jobs:
-      - publish:
-          context:
-            - trusted-publishing-guard
-          filters:
-            branches:
-              only:
-                - main
+      - run:
+          name: Activate pnpm
+          command: |
+            corepack prepare pnpm@11.9.0 --activate
+
+      - run:
+          name: Install Dependencies
+          command: pnpm install --frozen-lockfile
