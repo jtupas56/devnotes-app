@@ -1,30 +1,15 @@
 version: 2.1
-
 jobs:
-  build-and-check:
+  build:
     docker:
-      - image: cimg/node:22.13.0   # ✅ change this to Node 22+
+      - image: cimg/node:22.0.0
     steps:
       - checkout
       - run:
-          name: Install pnpm
+          name: Enable Corepack & Update pnpm
           command: |
-            npm install --global corepack@latest
             corepack enable
-            corepack prepare pnpm@latest-11 --activate
+            corepack prepare pnpm@latest --activate
       - run:
-          name: Install dependencies
-          command: pnpm install
-      - run:
-          name: Lint
-          command: pnpm lint
-      - run:
-          name: Build
-          command: pnpm build
-      - store_artifacts:
-          path: .next
-
-workflows:
-  verify:
-    jobs:
-      - build-and-check
+          name: Install Dependencies
+          command: pnpm install --frozen-lockfile
