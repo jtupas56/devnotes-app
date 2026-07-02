@@ -1,18 +1,17 @@
-version: 2.1
-
 jobs:
-  build:
-    docker:
-      - image: cimg/node:22.0.0
-
+  build_and_test: # this can be any name you choose
+    executor: node/default # use the default executor defined within the orb
     steps:
       - checkout
-
+      - node/install-packages:
+          pkg-manager: npm
       - run:
-          name: Activate pnpm
-          command: |
-            corepack prepare pnpm@11.9.0 --activate
-
+          command: npm run test
+          name: Run tests
       - run:
-          name: Install Dependencies
-          command: pnpm install --frozen-lockfile
+          command: npm run build
+          name: Build app
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - .
