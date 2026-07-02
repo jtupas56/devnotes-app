@@ -1,15 +1,18 @@
 version: 2.1
+
 jobs:
   build:
     docker:
       - image: cimg/node:22.0.0
+
     steps:
       - checkout
+
       - run:
-          name: Enable Corepack & Update pnpm
+          name: Activate pnpm
           command: |
-            corepack enable
-            corepack prepare pnpm@latest --activate
+            corepack prepare pnpm@11.9.0 --activate
+
       - run:
           name: Install Dependencies
           command: pnpm install --frozen-lockfile
