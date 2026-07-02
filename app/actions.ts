@@ -15,8 +15,13 @@ export async function createNote(title: string) {
 }
 
 export async function updateNote(id: number, content: string) {
-    await db.update(notes).set({ content, updatedAt: new Date() }).where(eq(notes.id, id));
+    const [updated] = await db
+        .update(notes)
+        .set({ content, updatedAt: new Date() })
+        .where(eq(notes.id, id))
+        .returning();
     revalidatePath("/");
+    return updated; // 👈 return the updated note
 }
 
 export async function deleteNote(id: number) {
@@ -25,6 +30,11 @@ export async function deleteNote(id: number) {
 }
 
 export async function updateNoteTitle(id: number, title: string) {
-    await db.update(notes).set({ title, updatedAt: new Date() }).where(eq(notes.id, id));
+    const [updated] = await db
+        .update(notes)
+        .set({ title, updatedAt: new Date() })
+        .where(eq(notes.id, id))
+        .returning();
     revalidatePath("/");
+    return updated; // 👈 return the updated note
 }
