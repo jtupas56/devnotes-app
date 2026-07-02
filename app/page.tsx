@@ -89,7 +89,15 @@ export default function Home() {
                 <div key={n.id} className={`flex items-center justify-between p-2 rounded cursor-pointer ${selectedId === n.id ? "bg-accent" : "hover:bg-accent/50"}`}>
                   <div onClick={() => selectNote(n.id)} className="flex-1 min-w-0">
                     <p className="font-medium truncate">{n.title || "Untitled"}</p>
-                    <p className="text-sm text-muted-foreground truncate">{n.content || "Empty"}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {new Date(n.updatedAt).toLocaleString('en-GB', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
                   </div>
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={e => { e.stopPropagation(); del(n.id); }}>
                     <Trash2 className="h-4 w-4" />
