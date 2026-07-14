@@ -2,10 +2,10 @@
 import { db } from "@/lib/db";
 import { notes } from "@/lib/db/schema";
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 export async function getNotes() {
-    return await db.select().from(notes).orderBy(notes.createdAt);
+    return await db.select().from(notes).orderBy(desc(notes.updatedAt));
 }
 
 export async function createNote(title: string) {
@@ -21,7 +21,7 @@ export async function updateNote(id: number, content: string) {
         .where(eq(notes.id, id))
         .returning();
     revalidatePath("/");
-    return updated; // 👈 return the updated note
+    return updated;
 }
 
 export async function deleteNote(id: number) {
@@ -36,5 +36,5 @@ export async function updateNoteTitle(id: number, title: string) {
         .where(eq(notes.id, id))
         .returning();
     revalidatePath("/");
-    return updated; // 👈 return the updated note
+    return updated;
 }
